@@ -29,6 +29,7 @@ grape --dp 20001 --aph 30001 --bn '127.0.0.1:20002'
 grape --dp 20002 --aph 40001 --bn '127.0.0.1:20001'
 ```
 * Install dependencies `npm install`
+* Before starting the server, navigate to `node_modules/grenache-nodejs-link/index.js` and add `const ed =  require('ed25519-supercop');` to the top of the line. There's a bug in the latest version of the library, that tries to get a library without importing it.
 * Start server `npm run server`
 * Start Client `npm run client`
 
