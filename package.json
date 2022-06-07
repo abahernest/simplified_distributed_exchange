@@ -1,0 +1,20 @@
+{
+  "name": "simplified_distributed_exchange",
+  "version": "1.0.0",
+  "description": "Bitfinex Task. A simplified Distributed  Exchange",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "server": "node server.js",
+    "client": "node client.js"
+  },
+  "author": "Ernest Abah",
+  "license": "ISC",
+  "dependencies": {
+    "ed25519-supercop": "^2.0.1",
+    "grenache-nodejs-http": "^0.7.12",
+    "grenache-nodejs-link": "^0.7.12",
+    "grenache-nodejs-ws": "^0.7.10",
+    "prompt-sync": "^4.2.0"
+  }
+}
