@@ -23,6 +23,7 @@ const peer = new PeerRPCClient(link, {})
 peer.init()
 
 let NODE_HASH;
+let ClientOrderBook;
 var endProgram = false;
 
 //First Connect to Server to get the HASH of the orderbook
@@ -36,6 +37,9 @@ peer.request("exchange_worker", {orderType:"init"}, { timeout: 10000 }, (err, da
   NODE_HASH = data;
 });
 
+//Instantiate Client OrderBook
+ClientOrderBook = new OrderBook([],[]);
+console.log("Connected to DHT")
 
 //START PROGRAM FLOW
 console.log("Welcome to Bitfinex Exchange!");
@@ -46,31 +50,22 @@ while (!endProgram){
     //Buy Order
     if (orderType === "1") {
       //Fetch order details from user
-      const { price, quantity } = getUserOrderDetails();
+      const { price, quantity } = getUserOrderDetails("buy");
       //Create Order
       let order = new Order(price, quantity, "buy");
-      //Fetch Orderbook from DHT
-      let orderbook = getDHT(NODE_HASH);
-      //Process Buy Order
-      let trades = processLimitBuy(order, orderbook["sellOrders"]);
+      //Add Order to Client OrderBook
+      let trades = ClientOrderBook.processLimitBuy(order)
       console.log("Trades: ", trades);
-      //Update DHT
-      updateDHT(orderbook);
-
     } 
     //Sell Order
     else if (orderType === "2") {
       //Fetch order details from user
-      const { price, quantity } = getUserOrderDetails();
+      const { price, quantity } = getUserOrderDetails("sell");
       //Create Order
       let order = new Order(price, quantity, "sell");
-      //Fetch Orderbook from DHT
-      let orderbook = getDHT(NODE_HASH);
-      //Process Buy Order
-      let trades = processLimitBuy(order, orderbook["sellOrders"]);
+      //Add Order to Client OrderBook
+      let trades = ClientOrderBook.processLimitSell(order);
       console.log("Trades: ", trades);
-      //Update DHT
-      updateDHT(orderbook);
     } 
     //Exit program
     else if (orderType === "3") {
@@ -79,8 +74,7 @@ while (!endProgram){
     } 
     //Display Order book
     else if (orderType === "4"){
-        let orderbook = getDHT(NODE_HASH)
-        console.log(orderbook);
+        console.log(ClientOrderBook);
     } 
     //Invalid input
     else {
@@ -98,7 +92,7 @@ function getDHT(hash) {
     }
     orderbook = JSON.parse(res.v);
   });
-  return orderbook;
+  return Promise.resolve(orderbook);
 }
 
 function updateDHT(orderbook) {

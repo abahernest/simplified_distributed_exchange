@@ -2,16 +2,16 @@ const prompt = require("prompt-sync")({ sigint: this });
 
 /**
  * This function will prompt user for input
-
+ * @param {string} orderType
  * @returns {float price, float quantity} orderinput
  */
-function getUserOrderDetails() {
+function getUserOrderDetails(orderType) {
   let quantity = parseFloat(
-    prompt("Please enter the quantity you want to sell:"),
+    prompt(`Please enter the quantity you want to ${orderType}:`),
     10
   );
   let price = parseFloat(
-    prompt("Please enter the price you want to sell at:"),
+    prompt(`Please enter the price you want to ${orderType}:`),
     10
   );
 
@@ -24,9 +24,9 @@ function getUserOrderDetails() {
  */
 function displayMainMenu(){
     console.log(
-      "Please enter a command:\n1. Buy\n2. Sell\n3. Exit\n4. OrderBook\n5. Cancel Order \n"
+      "Please select a Number:\nEnter 1 to Buy\nEnter 2 to Sell\nEnter 3 to Exit\nEnter 4 to OrderBook\nEnter 5 to Cancel Order \n"
     );
-    let orderType = prompt();
+    let orderType = prompt("input: ");
     return orderType;
 }
 
