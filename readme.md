@@ -4,6 +4,12 @@
 * NodeJs (JavaScript)
 * Grenache (communication between nodes with DHT)
 
+## IMPORTANT INFO
+
+Read this docs for program flow (implementation under the hood)
+
+[Program Description & Flow](https://docs.google.com/document/d/10FF_gss5m1c1jemmt1YDRVa_z7JDqIKQFXny3CCtH4A/edit?usp=sharing)
+
 ## Setup Project Locally
 
 * Clone Repository
@@ -27,7 +33,3 @@ grape --dp 20002 --aph 40001 --bn '127.0.0.1:20001'
 * Start Client `npm run client`
 
 * Follow instructions In the Terminal
-
-* IMPORTANT INFO
-Read this docs for program flow (implementation under the hood)
-`https://docs.google.com/document/d/10FF_gss5m1c1jemmt1YDRVa_z7JDqIKQFXny3CCtH4A/edit?usp=sharing`
