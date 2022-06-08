@@ -1,4 +1,29 @@
 const prompt = require("prompt-sync")({ sigint: this });
+// const fs = require('fs');
+// const envfile = require('envfile');
+// const sourcePath = ".env";
+// const dotenv = require("dotenv").config();
+
+// async function persistHash(val){
+//     console.log(envfile.parseFileSync(sourcePath));
+//     let parsedFile = envfile.parseFileSync(sourcePath);
+//     parsedFile.NODE_HASH = val;
+//     fs.writeFileSync("./.env", envfile.stringifySync(parsedFile));
+//     console.log(envfile.stringifySync(parsedFile));
+// }
+// async function incrementSequenceNumber(val) {
+//   console.log(envfile.parseFileSync(sourcePath));
+//   let parsedFile = envfile.parseFileSync(sourcePath);
+//   parsedFile.NODE_HASH = val;
+//   fs.writeFileSync("./.env", envfile.stringifySync(parsedFile));
+//   console.log(envfile.stringifySync(parsedFile));
+// }
+// function fetchHash(){
+//     return process.env("NODE_HASH") || "";
+// }
+// function fetchSequenceNumber(){
+//     return   process.env("SEQUENCE_NUMBER") || "";
+// }
 
 /**
  * This function will prompt user for input
@@ -282,7 +307,7 @@ function processLimitSell(order,  buyOrders){
 
 module.exports = {
     processLimitBuy,
-    processOrder,
+    processLimitSell,
     processOrder,
     removeBuyOrder,
     removeSellOrder,
@@ -292,5 +317,8 @@ module.exports = {
     addBuyOrder,
     addSellOrder,
     getUserOrderDetails,
-    displayMainMenu
+    displayMainMenu,
+    // persistHash,
+    // fetchHash,
+    // fetchSequenceNumber,
 }

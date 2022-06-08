@@ -7,7 +7,21 @@ const prompt = require("prompt-sync")({ sigint: this });
 
 //Local modules
 const { Order, OrderBook } = require("./order");
-const  {getUserOrderDetails, processLimitBuy, displayMainMenu} = require('./utils')
+const {
+  processLimitBuy,
+  processLimitSell,
+  processOrder,
+  removeBuyOrder,
+  removeSellOrder,
+  removeOrder,
+  removeBuyOrderAtIndex,
+  removeSellOrderAtIndex,
+  addBuyOrder,
+  addSellOrder,
+  getUserOrderDetails,
+  displayMainMenu,
+} = require("./utils");
+const  {NODE_HASH,updateHash,incrementSequenceNumber} = require('./config');
 
 //Link with DHT
 const link = new Link({
@@ -15,99 +29,137 @@ const link = new Link({
 })
 link.start()
 
-const opts = {
+let opts = {
   keys: ed.createKeyPair(ed.createSeed())
 }
 
 const peer = new PeerRPCClient(link, {})
 peer.init()
 
-let NODE_HASH;
 let ClientOrderBook;
 var endProgram = false;
 
-//First Connect to Server to get the HASH of the orderbook
-console.log("fetching HASH from server...")
-peer.request("exchange_worker", {orderType:"init"}, { timeout: 10000 }, (err, data) => {
-  if (err) {
-    console.log(err);
-    return;
-  }
-  console.log("hash:",data)
-  NODE_HASH = data;
-});
-
-//Instantiate Client OrderBook
-ClientOrderBook = new OrderBook([],[]);
-console.log("Connected to DHT")
-
-//START PROGRAM FLOW
-console.log("Welcome to Bitfinex Exchange!");
-while (!endProgram){
-  //Display main menu
-    const orderType = displayMainMenu();
-    
-    //Buy Order
-    if (orderType === "1") {
-      //Fetch order details from user
-      const { price, quantity } = getUserOrderDetails("buy");
-      //Create Order
-      let order = new Order(price, quantity, "buy");
-      //Add Order to Client OrderBook
-      let trades = ClientOrderBook.processLimitBuy(order)
-      console.log("Trades: ", trades);
-    } 
-    //Sell Order
-    else if (orderType === "2") {
-      //Fetch order details from user
-      const { price, quantity } = getUserOrderDetails("sell");
-      //Create Order
-      let order = new Order(price, quantity, "sell");
-      //Add Order to Client OrderBook
-      let trades = ClientOrderBook.processLimitSell(order);
-      console.log("Trades: ", trades);
-    } 
-    //Exit program
-    else if (orderType === "3") {
-      console.log("Exiting...");
-      endProgram = true;
-    } 
-    //Display Order book
-    else if (orderType === "4"){
-        console.log(ClientOrderBook);
-    } 
-    //Invalid input
-    else {
-      console.log("Invalid order type");
-      process.exit(0);
-    }
+if  (NODE_HASH === ""){
+  //Instantiate Client OrderBook
+  setTimeout(async () => {
+    instantiateOrderBook()
+      .then(async (hash) => {
+        updateHash(hash);
+        console.log(hash);
+        return getDHT(hash);
+      })
+      .then((res) => {
+        console.log("res", res);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, 5000);
 }
+
+// START PROGRAM FLOW
+console.log("Welcome to Bitfinex Exchange!");
+while (!endProgram) {
+  //Display main menu
+  const orderType = displayMainMenu();
+
+  //Buy Order
+  if (orderType === "1") {
+    //Fetch order details from user
+    const { price, quantity } = getUserOrderDetails("buy");
+    //Create Order
+    let order = new Order(price, quantity, "buy");
+    console.log(order)
+    //Add Order to Client OrderBook
+    let trades = ClientOrderBook.processLimitBuy(order);
+    console.log("Trades: ", trades);
+  }
+  //Sell Order
+  else if (orderType === "2") {
+    //Fetch order details from user
+    const { price, quantity } = getUserOrderDetails("sell");
+    //Create Order
+    let order = new Order(price, quantity, "sell");
+    console.log(order, orderbook)
+    //fetch orderbook from dht
+    getDHT(NODE_HASH)
+      .then((orderbook) => {
+        console.log("orderbook", orderbook);
+        //Process Sell Order
+        let trades = processLimitSell(order, orderbook["buyOrders"]);
+        console.log("Trades: ", trades);
+        return updateDHT(incrementSequenceNumber(), orderbook);
+      })
+      .then((hash) => {
+        updateHash(hash);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
+  //Exit program
+  else if (orderType === "3") {
+    console.log("Exiting...");
+    endProgram = true;
+  }
+  //Display Order book
+  else if (orderType === "4") {
+    console.log(ClientOrderBook);
+  }
+  //Invalid input
+  else {
+    console.log("Invalid order type");
+    process.exit(0);
+  }
+}
+// console.log("Connected to DHT")
 
 function getDHT(hash) {
-  let orderbook;
-  link.get(hash, async (err, res) => {
-    if (err) {
-      console.log("Error: ", err);
-      return;
-    }
-    orderbook = JSON.parse(res.v);
-  });
-  return Promise.resolve(orderbook);
+  return new Promise ((resolve,reject)=>{
+    link.get(hash, async (err, res) => {
+      if (err) {
+        reject(Error(err));
+      }
+      resolve(JSON.parse(res.v));
+      // resolve(res)
+    });
+  })
+
 }
 
-function updateDHT(orderbook) {
-  const data = {
-    seq: 1,
-    V: JSON.stringify(orderbook),
-  };
-  let response;
-  link.putMutable(data, opts, (err, hash) => {
-    if (err){
-      console.log("Error: ", err);
-      return;
-    }
-    console.log(hash)
-    response = hash;
-  });
-  return response;
+function updateDHT(sequence_number, orderbook) {
+  return new Promise((resolve,reject)=>{
+    const data = {
+      seq: sequence_number,
+      v: JSON.stringify(orderbook),
+    };
+    link.putMutable(data, opts, (err, hash) => {
+      if (err) {
+        reject(Error(err));
+      }
+      resolve(hash);
+    });
+  })
 }
+
+function instantiateOrderBook() {
+  return new Promise((resolve, reject) => {
+    //Empty Order Book
+    const data = {
+      seq: 1,
+      v: JSON.stringify({
+        buyOrders: [],
+        sellOrders: [],
+      }),
+    };
+
+    //Persist on DHT
+    link.putMutable(data, opts, (err, hash) => {
+      if (err) {
+        reject(Error(err));
+      }
+      resolve(hash);
+    });
+  });
+}
+
